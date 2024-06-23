@@ -34,6 +34,7 @@ namespace ExamplePlugin
     // More information in the Unity Docs: https://docs.unity3d.com/ScriptReference/MonoBehaviour.html
     public class ExamplePlugin : BaseUnityPlugin
     {
+        private float test = 0f;
         // The Plugin GUID should be a unique ID for this plugin,
         // which is human readable (as it is used in places like the config).
         // If we see this PluginGUID as it is on thunderstore,
@@ -47,6 +48,7 @@ namespace ExamplePlugin
         // We need our item definition to persist through our functions, and therefore make it a class field.
         private static ItemDef myItemDef;
         private static BuffDef myBuffDef;
+        private static BuffDef myDebuffDef;
 
         // The Awake() method is run at the very start when the game is initialized.
         public void Awake()
@@ -54,6 +56,34 @@ namespace ExamplePlugin
 
 
             Log.Init(Logger);
+
+            myBuffDef = new BuffDef();
+
+            myBuffDef.buffColor = Color.white;
+            myBuffDef.canStack = true;
+            myBuffDef.eliteDef = null;
+            myBuffDef.iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
+            myBuffDef.isCooldown = false;
+            myBuffDef.isDebuff = false;
+            myBuffDef.isHidden = false;
+            myBuffDef.startSfx = null;
+            myBuffDef.name = "test";
+
+            ContentAddition.AddBuffDef(myBuffDef);
+
+            myDebuffDef = new BuffDef();
+
+            myDebuffDef.buffColor = Color.white;
+            myDebuffDef.canStack = true;
+            myDebuffDef.eliteDef = null;
+            myDebuffDef.iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
+            myDebuffDef.isCooldown = false;
+            myDebuffDef.isDebuff = true;
+            myDebuffDef.isHidden = false;
+            myDebuffDef.startSfx = null;
+            myDebuffDef.name = "test2";
+
+            ContentAddition.AddBuffDef(myDebuffDef);
 
             myItemDef = ScriptableObject.CreateInstance<ItemDef>();
 
@@ -64,11 +94,11 @@ namespace ExamplePlugin
             myItemDef.descriptionToken = "EXAMPLE_CLOAKONKILL_DESC";
             myItemDef.loreToken = "EXAMPLE_CLOAKONKILL_LORE";
 
-            
+
             // Tier1=white, Tier2=green, Tier3=red, Lunar=Lunar, Boss=yellow,
             // and finally NoTier is generally used for helper items, like the tonic affliction
             #pragma warning disable Publicizer001
-            myItemDef._itemTierDef = Addressables.LoadAssetAsync<ItemTierDef>("RoR2/Base/Common/LunarDef.asset").WaitForCompletion();
+            myItemDef.deprecatedTier = ItemTier.Lunar;
             #pragma warning restore Publicizer001
             
 
@@ -91,6 +121,12 @@ namespace ExamplePlugin
                 GlobalEventManager_onCharacterDeath(report);
                 orig(self, report);
             };
+            GlobalEventManager.OnHitEnemy += (GlobalEventManager.orig_OnHitEnemy orig, RoR2.GlobalEventManager self, DamageInfo damageInfo, GameObject hitObject) =>
+            {
+                GlobalEventManager_onHitAll(damageInfo, hitObject);
+                orig(self, damageInfo, hitObject);
+            };
+            RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
         }
 
         private void GlobalEventManager_onCharacterDeath(DamageReport report)
@@ -106,11 +142,43 @@ namespace ExamplePlugin
             if (attackerCharacterBody.inventory)
             {
                 var garbCount = attackerCharacterBody.inventory.GetItemCount(myItemDef.itemIndex);
-                if (garbCount > 0 &&
-                    Util.CheckRoll(50, attackerCharacterBody.master))
+                if (garbCount > 0)
                 {
-                    attackerCharacterBody.AddTimedBuff(RoR2Content.Buffs.Cloak, 3 + garbCount);
+                    for(int i = 0; i < garbCount; i++)
+                    {
+                        attackerCharacterBody.AddBuff(myBuffDef);
+                    }
                 }
+            }
+        }
+
+        private void GlobalEventManager_onHitAll(DamageInfo damageInfo, GameObject hitObject)
+        {
+            // If a character was killed by the world, we shouldn't do anything.
+
+            var victim = hitObject?.GetComponent<CharacterBody>();
+
+            if (victim?.inventory)
+            {
+                var garbCount = victim.inventory.GetItemCount(myItemDef.itemIndex);
+                if (garbCount > 0)
+                {
+                    for (int i = 0; i < garbCount; i++)
+                    {
+                        victim.AddBuff(myDebuffDef);
+                    }
+                }
+            }
+        }
+
+        private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
+        {
+            int buffs = sender.GetBuffCount(myBuffDef);
+            int debuffs = sender.GetBuffCount(myDebuffDef);
+            Log.Info(Mathf.Max(.1f * (buffs - debuffs), -1 + .00000000000000001f + test));
+            if(buffs - debuffs != 0)
+            {
+                args.damageMultAdd += Mathf.Max(.1f * (buffs - debuffs), -1 + .00000000000000001f + test);
             }
         }
 
@@ -122,6 +190,38 @@ namespace ExamplePlugin
 
                 Log.Info($"Player pressed F2. Spawning our custom item at coordinates {transform.position}");
                 PickupDropletController.CreatePickupDroplet(PickupCatalog.FindPickupIndex(myItemDef.itemIndex), transform.position, transform.forward * 20f);
+            }
+            if (Input.GetKeyDown(KeyCode.F3))
+            {
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(myDebuffDef);
+            }
+            if (Input.GetKeyDown(KeyCode.F4))
+            {
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(myBuffDef);
+            }
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                test += .1f;
+                Log.Info($"test: {test}");
+
+            }
+            if (Input.GetKeyDown(KeyCode.F6))
+            {
+                test -= .1f;
+                Log.Info($"test: {test}");
+
+            }
+            if (Input.GetKeyDown(KeyCode.F7))
+            {
+                test *= 2f;
+                Log.Info($"test: {test}");
+
+            }
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                test /= 2f;
+                Log.Info($"test: {test}");
+
             }
         }
     }
