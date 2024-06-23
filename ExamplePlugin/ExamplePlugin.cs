@@ -160,12 +160,30 @@ namespace ExamplePlugin
 
             if (victim?.inventory)
             {
-                var garbCount = victim.inventory.GetItemCount(myItemDef.itemIndex);
+                var garbCount = victim.inventory.GetItemCount(myItemDef);
                 if (garbCount > 0)
                 {
                     for (int i = 0; i < garbCount; i++)
                     {
                         victim.AddBuff(myDebuffDef);
+                    }
+                }
+            }
+
+            var attacker = damageInfo?.attacker?.GetComponent<CharacterBody>();
+            Log.Info($"attacker {attacker}");
+            if (attacker)
+            {
+                var buffs = attacker.GetBuffCount(myBuffDef);
+                var debuffs = attacker.GetBuffCount(myDebuffDef);
+                bool roll = Util.CheckRoll(2 * damageInfo.procCoefficient + test, attacker.master);
+                Log.Info($"proc co {damageInfo.procCoefficient}, roll {roll}, debuffs {debuffs}, buffs {buffs}");
+                if (debuffs > 0 && roll)
+                {
+                    attacker.RemoveBuff(myDebuffDef);
+                    if(buffs > 0)
+                    {
+                        attacker.RemoveBuff(myBuffDef);
                     }
                 }
             }
@@ -175,10 +193,12 @@ namespace ExamplePlugin
         {
             int buffs = sender.GetBuffCount(myBuffDef);
             int debuffs = sender.GetBuffCount(myDebuffDef);
-            Log.Info(Mathf.Max(.1f * (buffs - debuffs), -1 + .00000000000000001f + test));
             if(buffs - debuffs != 0)
             {
-                args.damageMultAdd += Mathf.Max(.1f * (buffs - debuffs), -1 + .00000000000000001f + test);
+                var beforeDmg = sender.baseDamage + args.baseDamageAdd + (sender.level - 1) * sender.levelDamage;
+                var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs - debuffs)) - (beforeDmg);
+                Log.Info(addedDmg);
+                args.baseDamageAdd += addedDmg;
             }
         }
 
@@ -201,13 +221,13 @@ namespace ExamplePlugin
             }
             if (Input.GetKeyDown(KeyCode.F5))
             {
-                test += .1f;
+                test += 1f;
                 Log.Info($"test: {test}");
 
             }
             if (Input.GetKeyDown(KeyCode.F6))
             {
-                test -= .1f;
+                test -= 1f;
                 Log.Info($"test: {test}");
 
             }
