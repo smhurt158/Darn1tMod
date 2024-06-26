@@ -8,12 +8,6 @@ using UnityEngine.AddressableAssets;
 
 namespace ExamplePlugin
 {
-
-    // This is an example plugin that can be put in
-    // BepInEx/plugins/ExamplePlugin/ExamplePlugin.dll to test out.
-    // It's a small plugin that adds a relatively simple item to the game,
-    // and gives you that item whenever you press F2.
-
     // This attribute specifies that we have a dependency on a given BepInEx Plugin,
     // We need the R2API ItemAPI dependency because we are using for adding our item to the game.
     // You don't need this if you're not using R2API in your plugin,
@@ -34,87 +28,62 @@ namespace ExamplePlugin
     // More information in the Unity Docs: https://docs.unity3d.com/ScriptReference/MonoBehaviour.html
     public class ExamplePlugin : BaseUnityPlugin
     {
-        private float test = 0f;
         // The Plugin GUID should be a unique ID for this plugin,
         // which is human readable (as it is used in places like the config).
         // If we see this PluginGUID as it is on thunderstore,
         // we will deprecate this mod.
         // Change the PluginAuthor and the PluginName !
         public const string PluginGUID = PluginAuthor + "." + PluginName;
-        public const string PluginAuthor = "AuthorName";
+        public const string PluginAuthor = "SeanH";
         public const string PluginName = "ExamplePlugin";
         public const string PluginVersion = "1.0.0";
 
-        // We need our item definition to persist through our functions, and therefore make it a class field.
-        private static ItemDef myItemDef;
-        private static BuffDef myBuffDef;
-        private static BuffDef myDebuffDef;
+        private static ItemDef damageOnKillSlowedOnHit;
 
-        // The Awake() method is run at the very start when the game is initialized.
+        private static DamageBuff damageBuff;
+        private static SpeedNerf speedNerf;
+
         public void Awake()
         {
 
 
             Log.Init(Logger);
 
-            myBuffDef = new BuffDef();
+            damageBuff = new DamageBuff();
 
-            myBuffDef.buffColor = Color.white;
-            myBuffDef.canStack = true;
-            myBuffDef.eliteDef = null;
-            myBuffDef.iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            myBuffDef.isCooldown = false;
-            myBuffDef.isDebuff = false;
-            myBuffDef.isHidden = false;
-            myBuffDef.startSfx = null;
-            myBuffDef.name = "test";
+            speedNerf = new SpeedNerf();
 
-            ContentAddition.AddBuffDef(myBuffDef);
+            ContentAddition.AddBuffDef(damageBuff);
 
-            myDebuffDef = new BuffDef();
+            ContentAddition.AddBuffDef(speedNerf);
 
-            myDebuffDef.buffColor = Color.white;
-            myDebuffDef.canStack = true;
-            myDebuffDef.eliteDef = null;
-            myDebuffDef.iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            myDebuffDef.isCooldown = false;
-            myDebuffDef.isDebuff = true;
-            myDebuffDef.isHidden = false;
-            myDebuffDef.startSfx = null;
-            myDebuffDef.name = "test2";
-
-            ContentAddition.AddBuffDef(myDebuffDef);
-
-            myItemDef = ScriptableObject.CreateInstance<ItemDef>();
+            damageOnKillSlowedOnHit = ScriptableObject.CreateInstance<ItemDef>();
 
             // Language Tokens, explained there https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Assets/Localization/
-            myItemDef.name = "EXAMPLE_CLOAKONKILL_NAME";
-            myItemDef.nameToken = "EXAMPLE_CLOAKONKILL_NAME";
-            myItemDef.pickupToken = "EXAMPLE_CLOAKONKILL_PICKUP";
-            myItemDef.descriptionToken = "EXAMPLE_CLOAKONKILL_DESC";
-            myItemDef.loreToken = "EXAMPLE_CLOAKONKILL_LORE";
+            damageOnKillSlowedOnHit.name = "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME";
+            damageOnKillSlowedOnHit.nameToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME";
+            damageOnKillSlowedOnHit.pickupToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_PICKUP";
+            damageOnKillSlowedOnHit.descriptionToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_DESC";
+            damageOnKillSlowedOnHit.loreToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_LORE";
 
 
-            // Tier1=white, Tier2=green, Tier3=red, Lunar=Lunar, Boss=yellow,
-            // and finally NoTier is generally used for helper items, like the tonic affliction
             #pragma warning disable Publicizer001
-            myItemDef.deprecatedTier = ItemTier.Lunar;
+            #pragma warning disable CS0618
+            damageOnKillSlowedOnHit.deprecatedTier = ItemTier.Lunar;
+            #pragma warning restore CS0618
             #pragma warning restore Publicizer001
-            
 
-            myItemDef.pickupIconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            myItemDef.pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
+            damageOnKillSlowedOnHit.pickupIconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
+            damageOnKillSlowedOnHit.pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
 
-            // Can remove determines if a shrine of order, or a printer can take this item, generally true, except for NoTier items.
-            myItemDef.canRemove = true;
+            damageOnKillSlowedOnHit.canRemove = true;
 
-            // Hidden means that there will be no pickup notification, and it won't appear in the inventory at the top of the screen.
-            myItemDef.hidden = false;
+            damageOnKillSlowedOnHit.hidden = false;
 
             // https://thunderstore.io/package/KingEnderBrine/ItemDisplayPlacementHelper/
             var displayRules = new ItemDisplayRuleDict(null);
 
-            ItemAPI.Add(new CustomItem(myItemDef, displayRules));
+            ItemAPI.Add(new CustomItem(damageOnKillSlowedOnHit, displayRules));
 
             GlobalEventManager.OnCharacterDeath += (GlobalEventManager.orig_OnCharacterDeath orig, RoR2.GlobalEventManager self, DamageReport report) =>
             {
@@ -141,12 +110,12 @@ namespace ExamplePlugin
 
             if (attackerCharacterBody.inventory)
             {
-                var garbCount = attackerCharacterBody.inventory.GetItemCount(myItemDef.itemIndex);
+                var garbCount = attackerCharacterBody.inventory.GetItemCount(damageOnKillSlowedOnHit);
                 if (garbCount > 0)
                 {
                     for(int i = 0; i < garbCount; i++)
                     {
-                        attackerCharacterBody.AddBuff(myBuffDef);
+                        attackerCharacterBody.AddBuff(damageBuff);
                     }
                 }
             }
@@ -160,30 +129,29 @@ namespace ExamplePlugin
 
             if (victim?.inventory)
             {
-                var garbCount = victim.inventory.GetItemCount(myItemDef);
+                var garbCount = victim.inventory.GetItemCount(damageOnKillSlowedOnHit);
                 if (garbCount > 0)
                 {
                     for (int i = 0; i < garbCount; i++)
                     {
-                        victim.AddBuff(myDebuffDef);
+                        victim.AddBuff(speedNerf);
                     }
                 }
             }
 
             var attacker = damageInfo?.attacker?.GetComponent<CharacterBody>();
-            Log.Info($"attacker {attacker}");
             if (attacker)
             {
-                var buffs = attacker.GetBuffCount(myBuffDef);
-                var debuffs = attacker.GetBuffCount(myDebuffDef);
-                bool roll = Util.CheckRoll(2 * damageInfo.procCoefficient + test, attacker.master);
+                var buffs = attacker.GetBuffCount(damageBuff);
+                var debuffs = attacker.GetBuffCount(speedNerf);
+                bool roll = Util.CheckRoll(2 * damageInfo.procCoefficient, attacker.master);
                 Log.Info($"proc co {damageInfo.procCoefficient}, roll {roll}, debuffs {debuffs}, buffs {buffs}");
                 if (debuffs > 0 && roll)
                 {
-                    attacker.RemoveBuff(myDebuffDef);
+                    attacker.RemoveBuff(speedNerf);
                     if(buffs > 0)
                     {
-                        attacker.RemoveBuff(myBuffDef);
+                        attacker.RemoveBuff(damageBuff);
                     }
                 }
             }
@@ -191,14 +159,19 @@ namespace ExamplePlugin
 
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
-            int buffs = sender.GetBuffCount(myBuffDef);
-            int debuffs = sender.GetBuffCount(myDebuffDef);
-            if(buffs - debuffs != 0)
+            int buffs = sender.GetBuffCount(damageBuff);
+            if(buffs > 0)
             {
                 var beforeDmg = sender.baseDamage + args.baseDamageAdd + (sender.level - 1) * sender.levelDamage;
-                var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs - debuffs)) - (beforeDmg);
-                Log.Info(addedDmg);
+                var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs)) - (beforeDmg);
                 args.baseDamageAdd += addedDmg;
+            }
+            int debuffs = sender.GetBuffCount(speedNerf);
+            if(debuffs > 0)
+            {
+                var beforeSpeed = sender.baseMoveSpeed + args.baseMoveSpeedAdd + (sender.level - 1) * sender.levelMoveSpeed;
+                var addedSpeed = (beforeSpeed) * Mathf.Pow(.9f, debuffs) - (beforeSpeed);
+                args.baseMoveSpeedAdd += addedSpeed;
             }
         }
 
@@ -209,39 +182,15 @@ namespace ExamplePlugin
                 var transform = PlayerCharacterMasterController.instances[0].master.GetBodyObject().transform;
 
                 Log.Info($"Player pressed F2. Spawning our custom item at coordinates {transform.position}");
-                PickupDropletController.CreatePickupDroplet(PickupCatalog.FindPickupIndex(myItemDef.itemIndex), transform.position, transform.forward * 20f);
+                PickupDropletController.CreatePickupDroplet(PickupCatalog.FindPickupIndex(damageOnKillSlowedOnHit.itemIndex), transform.position, transform.forward * 20f);
             }
             if (Input.GetKeyDown(KeyCode.F3))
             {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(myDebuffDef);
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(speedNerf);
             }
             if (Input.GetKeyDown(KeyCode.F4))
             {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(myBuffDef);
-            }
-            if (Input.GetKeyDown(KeyCode.F5))
-            {
-                test += 1f;
-                Log.Info($"test: {test}");
-
-            }
-            if (Input.GetKeyDown(KeyCode.F6))
-            {
-                test -= 1f;
-                Log.Info($"test: {test}");
-
-            }
-            if (Input.GetKeyDown(KeyCode.F7))
-            {
-                test *= 2f;
-                Log.Info($"test: {test}");
-
-            }
-            if (Input.GetKeyDown(KeyCode.F8))
-            {
-                test /= 2f;
-                Log.Info($"test: {test}");
-
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageBuff);
             }
         }
     }
