@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
+using R2API;
 
 namespace ExamplePlugin
 {
@@ -20,6 +21,8 @@ namespace ExamplePlugin
             isHidden = false;
             startSfx = null;
             name = "DamageBuff";
+
+            ContentAddition.AddBuffDef(this);
         }
     }
 }

@@ -1,0 +1,4 @@
+devenv E:\SmallProjects\RoR2Mod\RoR2Mods.sln /build Debug /project ExamplePlugin\ExamplePlugin.csproj
+del C:\Users\hurt3\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\cache\Unknown-ExamplePlugin\0.0.0\ExamplePlugin.dll
+copy E:\SmallProjects\RoR2Mod\ExamplePlugin\bin\Debug\netstandard2.0\ExamplePlugin.dll C:\Users\hurt3\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\cache\Unknown-ExamplePlugin\0.0.0\ExamplePlugin.dll
+copy E:\SmallProjects\RoR2Mod\ExamplePlugin\bin\Debug\netstandard2.0\ExamplePlugin.dll C:\Users\hurt3\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Developer\BepInEx\plugins\Unknown-ExamplePlugin\ExamplePlugin\ExamplePlugin.dll

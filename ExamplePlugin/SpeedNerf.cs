@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
+using R2API;
 
 namespace ExamplePlugin
 {
@@ -19,7 +20,9 @@ namespace ExamplePlugin
             isDebuff = true;
             isHidden = false;
             startSfx = null;
-            name = "test2";
+            name = "SpeedNerf";
+
+            ContentAddition.AddBuffDef(this);
         }
     }
 }

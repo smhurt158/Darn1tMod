@@ -3,8 +3,7 @@ using R2API;
 using RoR2;
 using UnityEngine;
 using GlobalEventManager = On.RoR2.GlobalEventManager;
-
-using UnityEngine.AddressableAssets;
+using HealthComponent = On.RoR2.HealthComponent;
 
 namespace ExamplePlugin
 {
@@ -13,6 +12,7 @@ namespace ExamplePlugin
     // You don't need this if you're not using R2API in your plugin,
     // it's just to tell BepInEx to initialize R2API before this plugin so it's safe to use R2API.
     [BepInDependency(ItemAPI.PluginGUID)]
+    [BepInDependency(RecalculateStatsAPI.PluginGUID)]
 
     // This one is because we use a .language file for language tokens
     // More info in https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Assets/Localization/
@@ -34,98 +34,51 @@ namespace ExamplePlugin
         // we will deprecate this mod.
         // Change the PluginAuthor and the PluginName !
         public const string PluginGUID = PluginAuthor + "." + PluginName;
-        public const string PluginAuthor = "SeanH";
+        public const string PluginAuthor = "Darn1t";
         public const string PluginName = "ExamplePlugin";
         public const string PluginVersion = "1.0.0";
 
-        private static ItemDef damageOnKillSlowedOnHit;
-
-        private static DamageBuff damageBuff;
-        private static SpeedNerf speedNerf;
+        private static readonly DamageOnKillSlowedOnHitItem damageOnKillSlowedOnHit = new();
 
         public void Awake()
         {
-
-
             Log.Init(Logger);
-
-            damageBuff = new DamageBuff();
-
-            speedNerf = new SpeedNerf();
-
-            ContentAddition.AddBuffDef(damageBuff);
-
-            ContentAddition.AddBuffDef(speedNerf);
-
-            damageOnKillSlowedOnHit = ScriptableObject.CreateInstance<ItemDef>();
-
-            // Language Tokens, explained there https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Assets/Localization/
-            damageOnKillSlowedOnHit.name = "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME";
-            damageOnKillSlowedOnHit.nameToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME";
-            damageOnKillSlowedOnHit.pickupToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_PICKUP";
-            damageOnKillSlowedOnHit.descriptionToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_DESC";
-            damageOnKillSlowedOnHit.loreToken = "DAMAGE_ON_KILL_SLOWED_ON_HIT_LORE";
-
-
-            #pragma warning disable Publicizer001
-            #pragma warning disable CS0618
-            damageOnKillSlowedOnHit.deprecatedTier = ItemTier.Lunar;
-            #pragma warning restore CS0618
-            #pragma warning restore Publicizer001
-
-            damageOnKillSlowedOnHit.pickupIconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            damageOnKillSlowedOnHit.pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
-
-            damageOnKillSlowedOnHit.canRemove = true;
-
-            damageOnKillSlowedOnHit.hidden = false;
-
-            // https://thunderstore.io/package/KingEnderBrine/ItemDisplayPlacementHelper/
-            var displayRules = new ItemDisplayRuleDict(null);
-
-            ItemAPI.Add(new CustomItem(damageOnKillSlowedOnHit, displayRules));
 
             GlobalEventManager.OnCharacterDeath += (GlobalEventManager.orig_OnCharacterDeath orig, RoR2.GlobalEventManager self, DamageReport report) =>
             {
                 GlobalEventManager_onCharacterDeath(report);
                 orig(self, report);
             };
-            GlobalEventManager.OnHitEnemy += (GlobalEventManager.orig_OnHitEnemy orig, RoR2.GlobalEventManager self, DamageInfo damageInfo, GameObject hitObject) =>
-            {
-                GlobalEventManager_onHitAll(damageInfo, hitObject);
-                orig(self, damageInfo, hitObject);
-            };
+            
             RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
+            HealthComponent.TakeDamage += (HealthComponent.orig_TakeDamage orig, RoR2.HealthComponent self, DamageInfo damageInfo) =>
+            {
+                GlobalEventManager_onHitEnemy(self);
+                orig(self, damageInfo);
+
+            };
         }
 
         private void GlobalEventManager_onCharacterDeath(DamageReport report)
         {
-            // If a character was killed by the world, we shouldn't do anything.
-            if (!report.attacker || !report.attackerBody)
-            {
-                return;
-            }
+            var attackerCharacterBody = report?.attackerBody;
 
-            var attackerCharacterBody = report.attackerBody;
-
-            if (attackerCharacterBody.inventory)
+            if (attackerCharacterBody?.inventory)
             {
                 var garbCount = attackerCharacterBody.inventory.GetItemCount(damageOnKillSlowedOnHit);
                 if (garbCount > 0)
                 {
                     for(int i = 0; i < garbCount; i++)
                     {
-                        attackerCharacterBody.AddBuff(damageBuff);
+                        attackerCharacterBody.AddBuff(damageOnKillSlowedOnHit.DamageBuff);
                     }
                 }
             }
         }
 
-        private void GlobalEventManager_onHitAll(DamageInfo damageInfo, GameObject hitObject)
+        private void GlobalEventManager_onHitEnemy(RoR2.HealthComponent healthComponent)
         {
-            // If a character was killed by the world, we shouldn't do anything.
-
-            var victim = hitObject?.GetComponent<CharacterBody>();
+            var victim = healthComponent?.body;
 
             if (victim?.inventory)
             {
@@ -134,24 +87,7 @@ namespace ExamplePlugin
                 {
                     for (int i = 0; i < garbCount; i++)
                     {
-                        victim.AddBuff(speedNerf);
-                    }
-                }
-            }
-
-            var attacker = damageInfo?.attacker?.GetComponent<CharacterBody>();
-            if (attacker)
-            {
-                var buffs = attacker.GetBuffCount(damageBuff);
-                var debuffs = attacker.GetBuffCount(speedNerf);
-                bool roll = Util.CheckRoll(2 * damageInfo.procCoefficient, attacker.master);
-                Log.Info($"proc co {damageInfo.procCoefficient}, roll {roll}, debuffs {debuffs}, buffs {buffs}");
-                if (debuffs > 0 && roll)
-                {
-                    attacker.RemoveBuff(speedNerf);
-                    if(buffs > 0)
-                    {
-                        attacker.RemoveBuff(damageBuff);
+                        victim.AddBuff(damageOnKillSlowedOnHit.SpeedNerf);
                     }
                 }
             }
@@ -159,14 +95,14 @@ namespace ExamplePlugin
 
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
-            int buffs = sender.GetBuffCount(damageBuff);
+            int buffs = sender.GetBuffCount(damageOnKillSlowedOnHit.DamageBuff);
             if(buffs > 0)
             {
                 var beforeDmg = sender.baseDamage + args.baseDamageAdd + (sender.level - 1) * sender.levelDamage;
                 var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs)) - (beforeDmg);
                 args.baseDamageAdd += addedDmg;
             }
-            int debuffs = sender.GetBuffCount(speedNerf);
+            int debuffs = sender.GetBuffCount(damageOnKillSlowedOnHit.SpeedNerf);
             if(debuffs > 0)
             {
                 var beforeSpeed = sender.baseMoveSpeed + args.baseMoveSpeedAdd + (sender.level - 1) * sender.levelMoveSpeed;
@@ -186,11 +122,11 @@ namespace ExamplePlugin
             }
             if (Input.GetKeyDown(KeyCode.F3))
             {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(speedNerf);
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageOnKillSlowedOnHit.SpeedNerf);
             }
             if (Input.GetKeyDown(KeyCode.F4))
             {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageBuff);
+                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageOnKillSlowedOnHit.DamageBuff);
             }
         }
     }
