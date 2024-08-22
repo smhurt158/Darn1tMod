@@ -16,7 +16,7 @@ namespace ExamplePlugin
             canStack = true;
             eliteDef = null;
             iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            isCooldown = false;
+            isCooldown = true;
             isDebuff = true;
             isHidden = false;
             startSfx = null;

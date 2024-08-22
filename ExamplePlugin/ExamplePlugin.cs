@@ -39,6 +39,7 @@ namespace ExamplePlugin
         public const string PluginVersion = "1.0.0";
 
         private static readonly DamageOnKillSlowedOnHitItem damageOnKillSlowedOnHit = new();
+        private static readonly PermanentDamageArtifact permanentDamageArtifact = new();
 
         public void Awake()
         {
@@ -53,7 +54,7 @@ namespace ExamplePlugin
             RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
             HealthComponent.TakeDamage += (HealthComponent.orig_TakeDamage orig, RoR2.HealthComponent self, DamageInfo damageInfo) =>
             {
-                GlobalEventManager_onHitEnemy(self);
+                GlobalEventManager_onHitEnemy(self , damageInfo);
                 orig(self, damageInfo);
 
             };
@@ -76,7 +77,7 @@ namespace ExamplePlugin
             }
         }
 
-        private void GlobalEventManager_onHitEnemy(RoR2.HealthComponent healthComponent)
+        private void GlobalEventManager_onHitEnemy(RoR2.HealthComponent healthComponent, DamageInfo damageInfo)
         {
             var victim = healthComponent?.body;
 
@@ -90,6 +91,16 @@ namespace ExamplePlugin
                         victim.AddBuff(damageOnKillSlowedOnHit.SpeedNerf);
                     }
                 }
+            }
+
+            if(victim && victim.isPlayerControlled && RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(permanentDamageArtifact))
+            {
+                victim.inventory.GiveItem(permanentDamageArtifact.PermanentMaxHealthDecreaseItem);
+                if(victim.baseMaxHealth <= 1)
+                {
+                    victim.healthComponent.health = 0;
+                }
+                damageInfo.damage = 0;
             }
         }
 
@@ -108,6 +119,13 @@ namespace ExamplePlugin
                 var beforeSpeed = sender.baseMoveSpeed + args.baseMoveSpeedAdd + (sender.level - 1) * sender.levelMoveSpeed;
                 var addedSpeed = (beforeSpeed) * Mathf.Pow(.9f, debuffs) - (beforeSpeed);
                 args.baseMoveSpeedAdd += addedSpeed;
+            }
+
+            int permDebuffs = sender.inventory.GetItemCount(permanentDamageArtifact.PermanentMaxHealthDecreaseItem);
+
+            if (permDebuffs > 0)
+            {
+                args.baseHealthAdd -= Mathf.Min(5 * permDebuffs, sender.baseMaxHealth - 1);
             }
         }
 
