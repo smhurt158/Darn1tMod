@@ -1,7 +1,12 @@
 using BepInEx;
 using R2API;
 using RoR2;
+using RoR2.UI;
+using System;
+using System.Collections;
+using System.Threading;
 using UnityEngine;
+using static RoR2.RoR2Content;
 using GlobalEventManager = On.RoR2.GlobalEventManager;
 using HealthComponent = On.RoR2.HealthComponent;
 
@@ -33,6 +38,9 @@ namespace ExamplePlugin
         // If we see this PluginGUID as it is on thunderstore,
         // we will deprecate this mod.
         // Change the PluginAuthor and the PluginName !
+
+        private float test = 0;
+        private float test2 = 0;
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Darn1t";
         public const string PluginName = "ExamplePlugin";
@@ -44,89 +52,6 @@ namespace ExamplePlugin
         public void Awake()
         {
             Log.Init(Logger);
-
-            GlobalEventManager.OnCharacterDeath += (GlobalEventManager.orig_OnCharacterDeath orig, RoR2.GlobalEventManager self, DamageReport report) =>
-            {
-                GlobalEventManager_onCharacterDeath(report);
-                orig(self, report);
-            };
-            
-            RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
-            HealthComponent.TakeDamage += (HealthComponent.orig_TakeDamage orig, RoR2.HealthComponent self, DamageInfo damageInfo) =>
-            {
-                GlobalEventManager_onHitEnemy(self , damageInfo);
-                orig(self, damageInfo);
-
-            };
-        }
-
-        private void GlobalEventManager_onCharacterDeath(DamageReport report)
-        {
-            var attackerCharacterBody = report?.attackerBody;
-
-            if (attackerCharacterBody?.inventory)
-            {
-                var garbCount = attackerCharacterBody.inventory.GetItemCount(damageOnKillSlowedOnHit);
-                if (garbCount > 0)
-                {
-                    for(int i = 0; i < garbCount; i++)
-                    {
-                        attackerCharacterBody.AddBuff(damageOnKillSlowedOnHit.DamageBuff);
-                    }
-                }
-            }
-        }
-
-        private void GlobalEventManager_onHitEnemy(RoR2.HealthComponent healthComponent, DamageInfo damageInfo)
-        {
-            var victim = healthComponent?.body;
-
-            if (victim?.inventory)
-            {
-                var garbCount = victim.inventory.GetItemCount(damageOnKillSlowedOnHit);
-                if (garbCount > 0)
-                {
-                    for (int i = 0; i < garbCount; i++)
-                    {
-                        victim.AddBuff(damageOnKillSlowedOnHit.SpeedNerf);
-                    }
-                }
-            }
-
-            if(victim && victim.isPlayerControlled && RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(permanentDamageArtifact))
-            {
-                victim.inventory.GiveItem(permanentDamageArtifact.PermanentMaxHealthDecreaseItem);
-                if(victim.baseMaxHealth <= 1)
-                {
-                    victim.healthComponent.health = 0;
-                }
-                damageInfo.damage = 0;
-            }
-        }
-
-        private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
-        {
-            int buffs = sender.GetBuffCount(damageOnKillSlowedOnHit.DamageBuff);
-            if(buffs > 0)
-            {
-                var beforeDmg = sender.baseDamage + args.baseDamageAdd + (sender.level - 1) * sender.levelDamage;
-                var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs)) - (beforeDmg);
-                args.baseDamageAdd += addedDmg;
-            }
-            int debuffs = sender.GetBuffCount(damageOnKillSlowedOnHit.SpeedNerf);
-            if(debuffs > 0)
-            {
-                var beforeSpeed = sender.baseMoveSpeed + args.baseMoveSpeedAdd + (sender.level - 1) * sender.levelMoveSpeed;
-                var addedSpeed = (beforeSpeed) * Mathf.Pow(.9f, debuffs) - (beforeSpeed);
-                args.baseMoveSpeedAdd += addedSpeed;
-            }
-
-            int permDebuffs = sender.inventory.GetItemCount(permanentDamageArtifact.PermanentMaxHealthDecreaseItem);
-
-            if (permDebuffs > 0)
-            {
-                args.baseHealthAdd -= Mathf.Min(5 * permDebuffs, sender.baseMaxHealth - 1);
-            }
         }
 
         private void Update()
@@ -135,16 +60,8 @@ namespace ExamplePlugin
             {
                 var transform = PlayerCharacterMasterController.instances[0].master.GetBodyObject().transform;
 
-                Log.Info($"Player pressed F2. Spawning our custom item at coordinates {transform.position}");
+                Log.Info($"SEAN HURT Player pressed F2. Spawning our custom item at coordinates {transform.position}");
                 PickupDropletController.CreatePickupDroplet(PickupCatalog.FindPickupIndex(damageOnKillSlowedOnHit.itemIndex), transform.position, transform.forward * 20f);
-            }
-            if (Input.GetKeyDown(KeyCode.F3))
-            {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageOnKillSlowedOnHit.SpeedNerf);
-            }
-            if (Input.GetKeyDown(KeyCode.F4))
-            {
-                PlayerCharacterMasterController.instances[0].master.GetBody().AddBuff(damageOnKillSlowedOnHit.DamageBuff);
             }
         }
     }

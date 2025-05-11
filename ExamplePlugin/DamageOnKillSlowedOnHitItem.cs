@@ -37,6 +37,71 @@ namespace ExamplePlugin
             var displayRules = new ItemDisplayRuleDict(null);
 
             ItemAPI.Add(new CustomItem(this, displayRules));
+
+            On.RoR2.GlobalEventManager.OnCharacterDeath += (On.RoR2.GlobalEventManager.orig_OnCharacterDeath orig, RoR2.GlobalEventManager self, DamageReport report) =>
+            {
+                GlobalEventManager_onCharacterDeath(report);
+                orig(self, report);
+            };
+
+            On.RoR2.HealthComponent.TakeDamage += (On.RoR2.HealthComponent.orig_TakeDamage orig, RoR2.HealthComponent self, DamageInfo damageInfo) =>
+            {
+                GlobalEventManager_preOnHitEnemy(self, damageInfo);
+                orig(self, damageInfo);
+            };
+            RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
+
+        }
+
+        private void GlobalEventManager_onCharacterDeath(DamageReport report)
+        {
+            var attackerCharacterBody = report?.attackerBody;
+
+            if (attackerCharacterBody?.inventory)
+            {
+                var garbCount = attackerCharacterBody.inventory.GetItemCount(this);
+                if (garbCount > 0)
+                {
+                    for (int i = 0; i < garbCount; i++)
+                    {
+                        attackerCharacterBody.AddBuff(DamageBuff);
+                    }
+                }
+            }
+        }
+        private void GlobalEventManager_preOnHitEnemy(RoR2.HealthComponent healthComponent, DamageInfo damageInfo)
+        {
+            var victim = healthComponent?.body;
+
+            if (victim?.inventory)
+            {
+                var garbCount = victim.inventory.GetItemCount(this);
+                if (garbCount > 0)
+                {
+                    for (int i = 0; i < garbCount; i++)
+                    {
+                        victim.AddBuff(SpeedNerf);
+                    }
+                }
+            }
+        }
+
+        private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
+        {
+            int buffs = sender.GetBuffCount(DamageBuff);
+            if (buffs > 0)
+            {
+                var beforeDmg = sender.baseDamage + args.baseDamageAdd + (sender.level - 1) * sender.levelDamage;
+                var addedDmg = (beforeDmg) * Mathf.Pow(1.05f, (buffs)) - (beforeDmg);
+                args.baseDamageAdd += addedDmg;
+            }
+            int debuffs = sender.GetBuffCount(SpeedNerf);
+            if (debuffs > 0)
+            {
+                var beforeSpeed = sender.baseMoveSpeed + args.baseMoveSpeedAdd + (sender.level - 1) * sender.levelMoveSpeed;
+                var addedSpeed = (beforeSpeed) * Mathf.Pow(.9f, debuffs) - (beforeSpeed);
+                args.baseMoveSpeedAdd += addedSpeed;
+            }
         }
     }
 }

@@ -1,18 +1,18 @@
-﻿using RoR2;
+﻿using R2API;
+using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
-using R2API;
 
 namespace ExamplePlugin
 {
-    internal class SpeedNerf:BuffDef
+    internal class HealthDisplayBuff : BuffDef
     {
-        public SpeedNerf():base()
+        public HealthDisplayBuff() : base()
         {
-            buffColor = Color.white;
+            buffColor = Color.red;
             canStack = true;
             eliteDef = null;
             iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
@@ -20,7 +20,7 @@ namespace ExamplePlugin
             isDebuff = true;
             isHidden = false;
             startSfx = null;
-            name = "SpeedNerf";
+            name = "HealthDisplayBuff";
 
             ContentAddition.AddBuffDef(this);
         }
