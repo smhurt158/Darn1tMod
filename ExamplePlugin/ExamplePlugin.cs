@@ -1,14 +1,8 @@
 using BepInEx;
+using BepInEx.Logging;
 using R2API;
 using RoR2;
-using RoR2.UI;
-using System;
-using System.Collections;
-using System.Threading;
 using UnityEngine;
-using static RoR2.RoR2Content;
-using GlobalEventManager = On.RoR2.GlobalEventManager;
-using HealthComponent = On.RoR2.HealthComponent;
 
 namespace ExamplePlugin
 {
@@ -38,6 +32,7 @@ namespace ExamplePlugin
         // If we see this PluginGUID as it is on thunderstore,
         // we will deprecate this mod.
         // Change the PluginAuthor and the PluginName !
+        public static PluginInfo PInfo { get; private set; }
 
         private float test = 0;
         private float test2 = 0;
@@ -46,12 +41,16 @@ namespace ExamplePlugin
         public const string PluginName = "ExamplePlugin";
         public const string PluginVersion = "1.0.0";
 
-        private static readonly DamageOnKillSlowedOnHitItem damageOnKillSlowedOnHit = new();
-        private static readonly PermanentDamageArtifact permanentDamageArtifact = new();
+        private static DamageOnKillSlowedOnHitItem damageOnKillSlowedOnHit;
+        private static PermanentDamageArtifact permanentDamageArtifact;
 
         public void Awake()
         {
+            PInfo = Info;
             Log.Init(Logger);
+            Log.Info($"SEAN HURT LOG INIT");
+            damageOnKillSlowedOnHit = new DamageOnKillSlowedOnHitItem();
+            permanentDamageArtifact = new PermanentDamageArtifact();
         }
 
         private void Update()

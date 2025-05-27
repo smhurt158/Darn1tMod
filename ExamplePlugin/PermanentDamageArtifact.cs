@@ -32,7 +32,8 @@ namespace ExamplePlugin
             {
                 if (characterBody.isPlayerControlled && RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(this))
                 {
-                    characterBody.inventory.GiveItem((ItemIndex)11);
+                    ItemDef aegius = Addressables.LoadAssetAsync<ItemDef>("RoR2/Base/BarrierOnOverHeal/BarrierOnOverHeal.asset").WaitForCompletion();
+                    characterBody.inventory.GiveItem(aegius);
                 }
                 characterBody.SetBuffCount(PermanentMaxHealthDecreaseItem.HealthDisplayBuff.buffIndex, characterBody.inventory.GetItemCount(PermanentMaxHealthDecreaseItem));
             };
@@ -67,7 +68,11 @@ namespace ExamplePlugin
             healthComponent.health = victim.maxHealth;
             if (tookDamage && !damageInfo.rejected)
             {
-                victim.inventory.GiveItem(PermanentMaxHealthDecreaseItem, Mathf.CeilToInt(5 * damageInfo.procCoefficient));
+                bool isFallDamage = (damageInfo.damageType.damageType & DamageType.FallDamage) == DamageType.FallDamage;
+
+                var permanentDamageTaken = Mathf.CeilToInt(isFallDamage ? damageInfo.damage : 5 * damageInfo.procCoefficient);
+
+                victim.inventory.GiveItem(PermanentMaxHealthDecreaseItem, permanentDamageTaken);
                 victim.SetBuffCount(PermanentMaxHealthDecreaseItem.HealthDisplayBuff.buffIndex, victim.inventory.GetItemCount(PermanentMaxHealthDecreaseItem));
                 if (victim.healthComponent.health <= victim.inventory.GetItemCount(PermanentMaxHealthDecreaseItem))
                 {

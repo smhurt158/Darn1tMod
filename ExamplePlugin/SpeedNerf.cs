@@ -18,9 +18,10 @@ namespace ExamplePlugin
             iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
             isCooldown = false;
             isDebuff = true;
-            isHidden = false;
+            isHidden = true;
             startSfx = null;
             name = "SpeedNerf";
+            ignoreGrowthNectar = false;
 
             ContentAddition.AddBuffDef(this);
         }

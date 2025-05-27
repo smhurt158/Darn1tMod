@@ -11,7 +11,7 @@ namespace ExamplePlugin
     internal class PermanentMaxHealthDecreaseItem:ItemDef
     {
 
-        public HealthDisplayBuff HealthDisplayBuff = new();
+        public PermanentDamageDisplayBuff HealthDisplayBuff = new();
         public PermanentMaxHealthDecreaseItem() : base()
         {
             // Language Tokens, explained there https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Assets/Localization/

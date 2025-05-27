@@ -10,6 +10,7 @@ namespace ExamplePlugin
 {
     internal class DamageOnKillSlowedOnHitItem:ItemDef
     {
+        const int MAX_BUFFS_PER_STACK = 30;
         public readonly DamageBuff DamageBuff = new();
         public readonly SpeedNerf SpeedNerf = new();
         public DamageOnKillSlowedOnHitItem() : base()
@@ -27,7 +28,24 @@ namespace ExamplePlugin
             #pragma warning restore CS0618
 
             pickupIconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
-            pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
+
+            try
+            {
+                Debug.Log("SEAN HURT " + ExamplePlugin.PInfo);
+                Debug.Log("SEAN HURT " + ExamplePlugin.PInfo.Location);
+
+                Asset.Init();
+                Debug.Log("SEAN HURT " + Asset.AssetBundlePath);
+
+                Debug.Log($"SEAN HURT mainbundle: {(Asset.mainBundle == null ? 1 : 2)}");
+                pickupModelPrefab = Asset.mainBundle.LoadAsset<GameObject>("cube.prefab");
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"SEAN HURT Heres whats fucked: {ex}");
+
+                pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
+            }
 
             canRemove = true;
 
@@ -59,13 +77,12 @@ namespace ExamplePlugin
 
             if (attackerCharacterBody?.inventory)
             {
-                var garbCount = attackerCharacterBody.inventory.GetItemCount(this);
-                if (garbCount > 0)
+                var itemCount = attackerCharacterBody.inventory.GetItemCount(this);
+                if (itemCount > 0)
                 {
-                    for (int i = 0; i < garbCount; i++)
-                    {
-                        attackerCharacterBody.AddBuff(DamageBuff);
-                    }
+                    int buffs = attackerCharacterBody.GetBuffCount(DamageBuff);
+
+                    attackerCharacterBody.SetBuffCount(DamageBuff.buffIndex, Math.Min(buffs + itemCount, itemCount * MAX_BUFFS_PER_STACK));
                 }
             }
         }
@@ -75,13 +92,12 @@ namespace ExamplePlugin
 
             if (victim?.inventory)
             {
-                var garbCount = victim.inventory.GetItemCount(this);
-                if (garbCount > 0)
+                var itemCount = victim.inventory.GetItemCount(this);
+                if (itemCount > 0)
                 {
-                    for (int i = 0; i < garbCount; i++)
-                    {
-                        victim.AddBuff(SpeedNerf);
-                    }
+                    int debuffs = victim.GetBuffCount(SpeedNerf);
+
+                    victim.SetBuffCount(SpeedNerf.buffIndex, Math.Min(debuffs + itemCount, itemCount * MAX_BUFFS_PER_STACK));
                 }
             }
         }

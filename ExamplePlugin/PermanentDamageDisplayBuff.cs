@@ -8,19 +8,20 @@ using UnityEngine;
 
 namespace ExamplePlugin
 {
-    internal class HealthDisplayBuff : BuffDef
+    internal class PermanentDamageDisplayBuff : BuffDef
     {
-        public HealthDisplayBuff() : base()
+        public PermanentDamageDisplayBuff() : base()
         {
             buffColor = Color.red;
             canStack = true;
             eliteDef = null;
             iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
             isCooldown = false;
-            isDebuff = true;
+            isDebuff = false;
             isHidden = false;
             startSfx = null;
             name = "HealthDisplayBuff";
+            ignoreGrowthNectar = false;
 
             ContentAddition.AddBuffDef(this);
         }
