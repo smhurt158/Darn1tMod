@@ -2,14 +2,20 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using R2API;
-using static RoR2.RoR2Content;
-using JetBrains.Annotations;
 using System;
 
-namespace ExamplePlugin
+namespace Darn1tMod
 {
     internal class PermanentDamageArtifact : ArtifactDef
     {
+        public bool IsArtifactEnabled 
+        { 
+            get 
+            {
+                return RunArtifactManager.instance?.IsArtifactEnabled(this) ?? false;
+            }
+        }
+
         public PermanentMaxHealthDecreaseItem PermanentMaxHealthDecreaseItem = new();
         public PermanentDamageArtifact() 
         {
@@ -21,7 +27,7 @@ namespace ExamplePlugin
 
             ContentAddition.AddArtifactDef(this);
 
-            On.RoR2.HealthComponent.TakeDamage += (On.RoR2.HealthComponent.orig_TakeDamage orig, RoR2.HealthComponent self, DamageInfo damageInfo) =>
+            On.RoR2.HealthComponent.TakeDamage += (On.RoR2.HealthComponent.orig_TakeDamage orig, HealthComponent self, DamageInfo damageInfo) =>
             {
                 GlobalEventManager_preOnHitEnemy(self, damageInfo);
                 orig(self, damageInfo);
@@ -38,23 +44,20 @@ namespace ExamplePlugin
                 characterBody.SetBuffCount(PermanentMaxHealthDecreaseItem.HealthDisplayBuff.buffIndex, characterBody.inventory.GetItemCount(PermanentMaxHealthDecreaseItem));
             };
         }
-        private void GlobalEventManager_preOnHitEnemy(RoR2.HealthComponent healthComponent, DamageInfo damageInfo)
+        private void GlobalEventManager_preOnHitEnemy(HealthComponent healthComponent, DamageInfo damageInfo)
         {
+            if (!IsArtifactEnabled) return;
             var victim = healthComponent?.body;
 
-            if (victim &&
-                victim.isPlayerControlled &&
-                RunArtifactManager.instance &&
-                RunArtifactManager.instance.IsArtifactEnabled(this))
+            if (victim && victim.isPlayerControlled)
             {
                 healthComponent.barrier += 1;
             }
         }
 
-        private void GlobalEventManager_postOnHitEnemy(RoR2.HealthComponent healthComponent, DamageInfo damageInfo)
+        private void GlobalEventManager_postOnHitEnemy(HealthComponent healthComponent, DamageInfo damageInfo)
         {
-            bool artifactEnabled = RunArtifactManager.instance?.IsArtifactEnabled(this) ?? false;
-            if (!artifactEnabled) return;
+            if (!IsArtifactEnabled) return;
 
             var victim = healthComponent?.body;
 

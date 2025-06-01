@@ -1,12 +1,9 @@
 ﻿using R2API;
 using RoR2;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
 
-namespace ExamplePlugin
+namespace Darn1tMod
 {
     internal class PermanentMaxHealthDecreaseItem:ItemDef
     {

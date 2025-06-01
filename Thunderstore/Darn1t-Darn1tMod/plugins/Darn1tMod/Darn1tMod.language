@@ -1,0 +1,14 @@
+{
+  "strings": {
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME": "FALLBACK DEFAULT LANGUAGE Temporal Expansion",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_PICKUP": "FALLBACK DEFAULT LANGUAGE Kills increase damage, but enemy hits slow you",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_DESC": "FALLBACK DEFAULT LANGUAGE Whenever you <style=cIsDamage>kill an enemy</style>, increase damage by <style=cIsUtility>5%</style> <style=cStack>(+5% per stack)</style>. Getting hit decreases your <style=cIsUtility>movement speed<style> by <style=cIsUtility>10%<style><style=cStack>(+10% per stack)</style>. Maximum of 30 <style=cStack>(+30 per stack)</style> times",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_LORE": "FALLBACK DEFAULT LANGUAGE The mechanism was obviously some elaborate time piece, it had a stop watch's circular face and pointed hands. I probably could have made a pretty penny off of it, but the crown was broken. It only ever turned one way."
+  },
+  "en": {
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_NAME": "Temporal Expansion",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_PICKUP": "Kills increase damage, but enemy hits slow you",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_DESC": "Whenever you <style=cIsDamage>kill an enemy</style>, increase damage by <style=cIsUtility>5%</style> <style=cStack>(+5% per stack)</style>. Getting hit decreases your <style=cIsUtility>movement speed<style> by <style=cIsUtility>10%<style><style=cStack>(+10% per stack)</style>. Maximum of 30 <style=cStack>(+30 per stack)</style> times",
+    "DAMAGE_ON_KILL_SLOWED_ON_HIT_LORE": "The mechanism was obviously some elaborate time piece, it shared a stop watch's circular face and pointed hands. I probably could have made a pretty penny off of it, but the crown was broken. It only ever turned one way."
+  }
+}

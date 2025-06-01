@@ -1,12 +1,10 @@
 ﻿using R2API;
 using RoR2;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
 
-namespace ExamplePlugin
+namespace Darn1tMod
 {
     internal class DamageOnKillSlowedOnHitItem:ItemDef
     {
@@ -31,11 +29,9 @@ namespace ExamplePlugin
 
             try
             {
-                Debug.Log("SEAN HURT " + ExamplePlugin.PInfo);
-                Debug.Log("SEAN HURT " + ExamplePlugin.PInfo.Location);
+                Debug.Log("SEAN HURT " + Darn1tMod.PInfo);
+                Debug.Log("SEAN HURT " + Darn1tMod.PInfo.Location);
 
-                Asset.Init();
-                Debug.Log("SEAN HURT " + Asset.AssetBundlePath);
 
                 Debug.Log($"SEAN HURT mainbundle: {(Asset.mainBundle == null ? 1 : 2)}");
                 pickupModelPrefab = Asset.mainBundle.LoadAsset<GameObject>("cube.prefab");

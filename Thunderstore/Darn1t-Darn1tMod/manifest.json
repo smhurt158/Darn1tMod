@@ -1,0 +1,17 @@
+﻿{
+	"name": "Darn1tMod",
+	"version_number": "0.1.1",
+	"website_url": "https://github.com/",
+	"description": "Darn1t's first Mod",
+	"author": "Darn1t",
+	"dependencies": [
+		"bbepis-BepInExPack-5.4.2117",
+		"RiskofThunder-HookGenPatcher-1.2.3",
+
+		"RiskofThunder-R2API_Core-5.1.5",
+		"RiskofThunder-R2API_Items-1.0.4",
+		"RiskofThunder-R2API_Language-1.0.1",
+
+		"RiskofThunder-R2API_RecalculateStats-1.5.0"
+	]
+}

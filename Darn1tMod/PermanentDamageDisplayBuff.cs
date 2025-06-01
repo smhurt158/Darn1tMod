@@ -1,12 +1,9 @@
 ﻿using R2API;
 using RoR2;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine.AddressableAssets;
 using UnityEngine;
 
-namespace ExamplePlugin
+namespace Darn1tMod
 {
     internal class PermanentDamageDisplayBuff : BuffDef
     {
@@ -17,11 +14,14 @@ namespace ExamplePlugin
             eliteDef = null;
             iconSprite = Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/MiscIcons/texMysteryIcon.png").WaitForCompletion();
             isCooldown = false;
-            isDebuff = false;
             isHidden = false;
             startSfx = null;
-            name = "HealthDisplayBuff";
-            ignoreGrowthNectar = false;
+            name = "PermanentDamageDisplayBuff";
+
+            //Item Interactions
+            ignoreGrowthNectar = true;
+            isDebuff = false;
+            flags = Flags.ExcludeFromNoxiousThorns;
 
             ContentAddition.AddBuffDef(this);
         }
