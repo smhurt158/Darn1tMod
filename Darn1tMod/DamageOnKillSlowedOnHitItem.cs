@@ -29,17 +29,10 @@ namespace Darn1tMod
 
             try
             {
-                Debug.Log("SEAN HURT " + Darn1tMod.PInfo);
-                Debug.Log("SEAN HURT " + Darn1tMod.PInfo.Location);
-
-
-                Debug.Log($"SEAN HURT mainbundle: {(Asset.mainBundle == null ? 1 : 2)}");
                 pickupModelPrefab = Asset.mainBundle.LoadAsset<GameObject>("cube.prefab");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.Log($"SEAN HURT Heres whats fucked: {ex}");
-
                 pickupModelPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
             }
 
